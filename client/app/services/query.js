@@ -253,6 +253,12 @@ export class Parameter {
       }
     }
 
+    if (this.type === 'query' && !isEmptyValue(value)) {
+      if (this.multiValuesOptions && !isArray(value)) {
+        value = [value];
+      }
+    }
+
     if (isDateRangeParameter(this.type)) {
       this.value = null;
       this.$$value = null;
@@ -349,10 +355,11 @@ export class Parameter {
   }
 
   toUrlParams() {
-    if (this.isEmpty) {
-      return {};
-    }
     const prefix = this.urlPrefix;
+    if (this.isEmpty) {
+      return { [`${prefix}${this.name}`]: null };
+    }
+
     if (isDateRangeParameter(this.type) && isObject(this.value)) {
       return {
         [`${prefix}${this.name}.start`]: this.value.start,
@@ -386,7 +393,8 @@ export class Parameter {
       if (has(query, key)) {
         if (this.multiValuesOptions) {
           try {
-            this.setValue(JSON.parse(query[key]));
+            const valueFromJson = JSON.parse(query[key]);
+            this.setValue(isArray(valueFromJson) ? valueFromJson : query[key]);
           } catch (e) {
             this.setValue(query[key]);
           }
